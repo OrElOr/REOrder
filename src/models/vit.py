@@ -51,6 +51,10 @@ class ViT(VisionTransformer):
         )
         self.pos_embed = None
 
+        # SPEAR: 고유한 비밀 순열(secret permutation)을 단 1회 생성하고 모델 버퍼에 등록합니다
+        secret_pi = torch.randperm(self.num_patches)
+        self.register_buffer("secret_pi", secret_pi)
+
     def _pos_embed(
         self, x: torch.Tensor, perm: list[int] | None = None
     ) -> torch.Tensor:
@@ -93,6 +97,11 @@ class ViT(VisionTransformer):
     def forward(
         self, data: torch.Tensor, perm: torch.Tensor = None, **kwargs
     ) -> torch.Tensor:
+        # SPEAR: 외부에서 perm이 명시적으로 주어지지 않았다면, 모델 자신의 시크릿 키를 사용!
+        if perm is None and hasattr(self, 'secret_pi'):
+            # 배치 크기에 맞춰 확장
+            perm = self.secret_pi.unsqueeze(0).expand(data.shape[0], -1)
+
         # Patch embedding with optional permutation
         patches = self.patch_embed(data, perm=perm)
         embeddings = self._pos_embed(patches, perm=perm)
