@@ -42,7 +42,11 @@ class SPEAR_Swin(nn.Module):
         # ==========================================================
         # [Step 2] SPEAR DEFENSE: NAIVE GLOBAL PERMUTATION
         # ==========================================================
-        B, L, C = x.shape
+        B, H, W, C = x.shape
+        L = H * W
+        
+        # Flatten spatial dimensions to (B, L, C) for permutation
+        x_flat = x.view(B, L, C)
         
         # Ensure the secret_pi matches the sequence length (in case of different image sizes)
         assert L == len(self.secret_pi), f"Expected sequence length {len(self.secret_pi)}, got {L}"
@@ -53,7 +57,10 @@ class SPEAR_Swin(nn.Module):
         pi_expanded = self.secret_pi.unsqueeze(0).unsqueeze(-1).expand(B, L, C)
         
         # Scramble the sequence dimension using the secret permutation
-        x = torch.gather(x, dim=1, index=pi_expanded)
+        x_scrambled = torch.gather(x_flat, dim=1, index=pi_expanded)
+        
+        # Reshape back to original Swin spatial format (B, H, W, C)
+        x = x_scrambled.view(B, H, W, C)
         # ==========================================================
 
         # [Step 3] Proceed into the rest of the Swin architecture
