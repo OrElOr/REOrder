@@ -64,7 +64,9 @@ class SPEAR_Swin(nn.Module):
         # ==========================================================
 
         # [Step 3] Proceed into the rest of the Swin architecture
-        x = self.base_model.pos_drop(x)
+        pos_drop = getattr(self.base_model, 'pos_drop', None)
+        if pos_drop is not None:
+            x = pos_drop(x)
         x = self.base_model.layers(x)
         x = self.base_model.norm(x)
         
