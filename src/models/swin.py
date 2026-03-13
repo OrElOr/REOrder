@@ -35,8 +35,9 @@ class SPEAR_Swin(nn.Module):
         x = self.base_model.patch_embed(x)
         
         # If absolute positional embedding is used, add it
-        if self.base_model.absolute_pos_embed is not None:
-            x = x + self.base_model.absolute_pos_embed
+        absolute_pos_embed = getattr(self.base_model, 'absolute_pos_embed', None)
+        if absolute_pos_embed is not None:
+            x = x + absolute_pos_embed
 
         # ==========================================================
         # [Step 2] SPEAR DEFENSE: NAIVE GLOBAL PERMUTATION
